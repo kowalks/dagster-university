@@ -1,7 +1,19 @@
 # Environment files
 env/
 .env
+.vscode/
 
 # Python
 *.egg-info/
 __pycache__/
+
+# Tmp files
+tmp*/
+.DS_Store
+
+# Data files
+*.csv
+*.parquet
+*.duckdb
+*.geojson
+*.png
