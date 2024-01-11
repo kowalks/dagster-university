@@ -49,3 +49,20 @@ def manhattan_map():
     )
 
     pio.write_image(fig, constants.MANHATTAN_MAP_FILE_PATH)
+
+@asset(deps=['taxi_trips'])
+def trips_by_week():
+    query = '''
+        select
+            date_trunc('week', pickup_datetime) as period,
+            count(*) as num_trips,
+            sum(passenger_count) as passenger_count,
+            sum(total_amount) as total_amount,
+            sum(trip_distance) as trip_distance
+        from trips
+        group by period
+    '''
+    
+    conn = duckdb.connect(os.getenv('DUCKDB_DATABASE'))
+    trips = conn.execute(query).fetch_df()
+    trips.to_csv(constants.TRIPS_BY_WEEK_FILE_PATH, index=False)

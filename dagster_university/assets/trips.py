@@ -53,7 +53,7 @@ def taxi_trips():
 @asset(deps=['taxi_zones_file'])
 def taxi_zones():
     """The raw taxi zones dataset, loaded into a DuckDB database"""
-    sql_query = '''
+    sql_query = f'''
         create or replace table zones as (
             select
                 LocationID as zone_id,
