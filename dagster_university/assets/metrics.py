@@ -1,11 +1,15 @@
+import os
+
 import plotly.express as px
 import plotly.io as pio
+import pandas as pd
 import geopandas as gpd
 
 from dagster_duckdb import DuckDBResource
 from dagster import asset
 
 from . import constants
+from ..partitions import weekly_partition
 
 
 @asset(deps=['taxi_trips', 'taxi_zones'])
@@ -49,9 +53,12 @@ def manhattan_map():
 
     pio.write_image(fig, constants.MANHATTAN_MAP_FILE_PATH)
 
-@asset(deps=['taxi_trips'])
-def trips_by_week(database: DuckDBResource):
-    query = '''
+@asset(deps=['taxi_trips'], partitions_def=weekly_partition)
+def trips_by_week(context, database: DuckDBResource):
+    """The number of trips per week, aggregated by week."""
+    period_to_fetch = context.asset_partition_key_for_output()
+
+    query = f'''
         select
             date_trunc('week', pickup_datetime) as period,
             count(*) as num_trips,
@@ -59,10 +66,17 @@ def trips_by_week(database: DuckDBResource):
             sum(total_amount) as total_amount,
             sum(trip_distance) as trip_distance
         from trips
+        where pickup_datetime >= '{period_to_fetch}'
+            and pickup_datetime < '{period_to_fetch}'::date + interval '1 week'
         group by period
     '''
-    
+
     with database.get_connection() as conn:
         trips = conn.execute(query).fetch_df()
+
+    if os.path.exists(constants.TRIPS_BY_WEEK_FILE_PATH):
+        existing = pd.read_csv(constants.TRIPS_BY_WEEK_FILE_PATH)
+        existing = existing[existing['period'] != period_to_fetch]
+        trips = pd.concat([existing, trips])
 
     trips.to_csv(constants.TRIPS_BY_WEEK_FILE_PATH, index=False)
