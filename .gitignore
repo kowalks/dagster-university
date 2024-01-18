@@ -17,3 +17,4 @@ tmp*/
 *.duckdb
 *.geojson
 *.png
+*.json

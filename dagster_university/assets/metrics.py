@@ -14,6 +14,7 @@ from ..partitions import weekly_partition
 
 @asset(deps=['taxi_trips', 'taxi_zones'])
 def manhattan_stats(database: DuckDBResource):
+    """Metrics on taxi trips in Manhattan."""
     query = '''
         select
             zones.zone,
@@ -37,6 +38,7 @@ def manhattan_stats(database: DuckDBResource):
 
 @asset(deps=['manhattan_stats'])
 def manhattan_map():
+    """A map of the number of trips per taxi zone in Manhattan."""
     trips_by_zone = gpd.read_file(constants.MANHATTAN_STATS_FILE_PATH)
 
     fig = px.choropleth_mapbox(trips_by_zone,
